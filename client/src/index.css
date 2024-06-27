@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Styles for the emoji picker */
+.emoji-picker-container {
+    position: absolute;
+    bottom: 24px;
+    /* Adjust based on your design */
+    left: 0;
+    z-index: 1000;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: white;
+}
+
+/* Styles for the GIF picker */
+.gif-picker-container {
+    position: absolute;
+    bottom: 24px;
+    /* Adjust based on your design */
+    left: 0;
+    z-index: 1000;
+    border: 1px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    background: white;
+    height: 300px;
+    /* Set a fixed height */
+    overflow-y: scroll;
+}
+
+/* Close button styling */
+.message-input .ant-btn.ant-btn-icon-only {
+    position: absolute;
+    top: 0;
+    right: 0;
+    background: white;
+    border: none;
+    z-index: 1001;
+}
+
+/* Additional adjustments for emoji-picker-react */
+.emoji-picker-react {
+    width: 100%;
+}
