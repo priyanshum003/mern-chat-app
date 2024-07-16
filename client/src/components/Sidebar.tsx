@@ -19,7 +19,7 @@ const Sidebar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
 
-  const { setSelectedChat, selectedChat } = useChat();
+  const { setSelectedChat} = useChat();
   const { user: currentUser } = useAuth();
 
   useEffect(() => {
@@ -42,8 +42,10 @@ const Sidebar: React.FC = () => {
     try {
       const response = await createChat([user._id], false);
       if (response.success) {
-        fetchChats(); // Refresh the chat list
-        setSelectedChat(response.data);
+        const newChat = response.data;
+
+        fetchChats(); 
+        setSelectedChat(newChat);
         setSearchQuery('');
       } else {
         message.error('Failed to create chat');
@@ -51,11 +53,8 @@ const Sidebar: React.FC = () => {
     } catch (error) {
       message.error('Error creating chat');
     }
-  }, [fetchChats]);
+  }, [fetchChats, setSelectedChat]);
 
-  useEffect(() => {
-    console.log(selectedChat);
-  }, [selectedChat]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -94,7 +93,7 @@ const Sidebar: React.FC = () => {
             return (
               <List.Item className="hover:bg-gray-800 cursor-pointer" onClick={() => selectChat(chat)}>
                 <List.Item.Meta
-                  avatar={<Avatar src={chatAvatar || 'https://via.placeholder.com/150'} />}
+                  avatar={<Avatar src={chatAvatar} />}
                   title={<span className="font-semibold text-white">{chatName}</span>}
                   description={
                     <span className="text-gray-400">
@@ -116,7 +115,7 @@ const Sidebar: React.FC = () => {
             return (
               <List.Item className="hover:bg-gray-800 cursor-pointer" onClick={() => handleUserSelect(user)}>
                 <List.Item.Meta
-                  avatar={<Avatar src={user.avatar || 'https://via.placeholder.com/150'} />}
+                  avatar={<Avatar src={user.avatar} />}
                   title={<span className="font-semibold text-white">{user.name}</span>}
                   description={<span className="text-gray-400">{user.email}</span>}
                 />

@@ -9,7 +9,7 @@ interface ChatContextType {
   selectedChat: Chat | null;
   messages: Message[];
   selectChat: (chat: Chat) => void;
-  setSelectedChat: (chat: Chat) => void;
+  setSelectedChat: (chat: Chat | null) => void;
   sendMessage: (content: string) => Promise<void>;
   fetchChats: () => Promise<void>;
   createChat: (params: { users: string[]; isGroupChat: boolean; chatName?: string; groupAdmin?: string }) => Promise<void>;
@@ -43,19 +43,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     if (selectedChat) {
       socket.emit('joinRoom', selectedChat._id);
-      socket.on('message', (message: Message) => {
-        console.log(message, "Message from socket");
+
+      const handleMessage = (message: Message) => {
         setMessages((prevMessages) => {
           if (!prevMessages.some((m) => m._id === message._id)) {
             return [...prevMessages, message];
           }
           return prevMessages;
         });
-      });
+      };
+
+      socket.on('message', handleMessage);
 
       return () => {
         socket.emit('leaveRoom', selectedChat._id);
-        socket.off('message');
+        socket.off('message', handleMessage);
       };
     }
   }, [selectedChat]);
@@ -78,7 +80,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const sendMessage = useCallback(async (content: string) => {
     if (!selectedChat) return;
     const response = await sendMessageAPI(content, selectedChat._id);
-    console.log(response , "Response from sendMessage");
     if (response.success) {
       socket.emit('chatMessage', response.data);
     }

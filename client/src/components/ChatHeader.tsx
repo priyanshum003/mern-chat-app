@@ -1,23 +1,25 @@
-import React from 'react';
-import { Avatar } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
-import { Chat } from '../types/chat';
+import { Avatar } from 'antd';
+import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getChatName, getChatDescription } from '../utils/chatUtils';
+import { Chat } from '../types/chat';
+import { getChatAvatar, getChatDescription, getChatName } from '../utils/chatUtils';
 
 interface ChatHeaderProps {
   chat: Chat;
 }
 
 const ChatHeader: React.FC<ChatHeaderProps> = ({ chat }) => {
-  const { user } = useAuth();
-  const chatName = getChatName(chat, user!);
-  const chatDescription = getChatDescription(chat, user);
+  const { user: currentUser } = useAuth();
 
-  // Determine the avatar to show in the chat header
-  const chatAvatar = chat.isGroupChat
-    ? chat.groupAvatar || 'https://via.placeholder.com/150'
-    : chat.users.find(u => u._id !== user?._id)?.avatar || 'https://via.placeholder.com/150';
+  if (!currentUser) {
+    console.error('Current user not found');
+    return null; // or render a placeholder
+  }
+
+  const chatName = getChatName(chat, currentUser);
+  const chatDescription = getChatDescription(chat, currentUser);
+  const chatAvatar = getChatAvatar(chat, currentUser);
 
   return (
     <div className="chat-header flex items-center p-4 border-b border-gray-200 bg-white">

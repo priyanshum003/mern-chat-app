@@ -22,7 +22,7 @@ export const createChat = asyncHandler(async (req: AuthRequest, res: Response) =
         existingChat = await Chat.findOne({
             isGroupChat: false,
             users: { $all: [...userObjectIds, req.user._id], $size: 2 }
-        });
+        }).populate('users', '-password');
     }
 
     if (existingChat) {
@@ -37,7 +37,9 @@ export const createChat = asyncHandler(async (req: AuthRequest, res: Response) =
     });
 
     const createdChat = await chat.save();
-    apiResponse(res, 201, true, 'Chat created successfully', createdChat);
+
+    const populatedChat = await createdChat.populate('users', '-password');
+    apiResponse(res, 201, true, 'Chat created successfully', populatedChat);
 });
 
 

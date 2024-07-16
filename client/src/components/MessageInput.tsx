@@ -20,6 +20,24 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
       setMessage('');
     }
   };
+  
+  const handleUpload: UploadProps['onChange'] = async (info: UploadChangeParam) => {
+    const file = (info.file.originFileObj || info.file) as RcFile;
+    if (!file) {
+      console.error('No file found');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+  
+    try {
+      const { url } = await uploadFileToServer(formData);
+      onSendMessage(`${url}`);
+    } catch (error) {
+      console.error('File upload failed:', error);
+    }
+  };
+  
 
   const addEmoji = (emojiObject: any, event: any) => {
     setMessage(message + emojiObject.emoji);
@@ -33,22 +51,22 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
 
   const fetchGifs = (offset: number) => giphyFetch.trending({ offset, limit: 10 });
 
-  const handleUpload: UploadProps['onChange'] = async (info: UploadChangeParam) => {
-    const file = (info.file.originFileObj || info.file) as RcFile;
-    if (!file) {
-      console.error('No file found');
-      return;
-    }
-    const formData = new FormData();
-    formData.append('file', file);
+  // const handleUpload: UploadProps['onChange'] = async (info: UploadChangeParam) => {
+  //   const file = (info.file.originFileObj || info.file) as RcFile;
+  //   if (!file) {
+  //     console.error('No file found');
+  //     return;
+  //   }
+  //   const formData = new FormData();
+  //   formData.append('file', file);
 
-    try {
-      const { url} = await uploadFileToServer(formData);
-      onSendMessage(`${url}`);
-    } catch (error) {
-      console.error('File upload failed:', error);
-    }
-  };
+  //   try {
+  //     const { url} = await uploadFileToServer(formData);
+  //     onSendMessage(`${url}`);
+  //   } catch (error) {
+  //     console.error('File upload failed:', error);
+  //   }
+  // };
 
   return (
     <div className="relative flex items-center p-4 bg-white border-t border-gray-200">

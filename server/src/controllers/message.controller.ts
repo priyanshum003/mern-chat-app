@@ -34,7 +34,6 @@ export const getMessages = asyncHandler(async (req: AuthRequest, res: Response) 
 
   const messages = await Message.find({ chatId })
     .populate('sender', 'name email')
-    .populate('chatId');
 
   apiResponse(res, 200, true, 'Messages retrieved successfully', messages);
 });
