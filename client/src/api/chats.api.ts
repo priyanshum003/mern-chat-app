@@ -2,7 +2,7 @@ import { CreateChatResponse, GetChatsResponse } from '../types/chat';
 import axiosInstance from './axiosInstance';
 
 export const createChat = async (users: string[], isGroupChat: boolean, chatName?: string, groupAdmin?: string):Promise <CreateChatResponse>  => {
-  const response = await axiosInstance.post<CreateChatResponse>("/chats", { users, isGroupChat, chatName, groupAdmin });
+  const response = await axiosInstance.post<CreateChatResponse>("/chats/create", { users, isGroupChat, chatName, groupAdmin });
   if (!response.data.success) {
     throw new Error(response.data.message || 'Failed to create chat');
   }
@@ -10,7 +10,7 @@ export const createChat = async (users: string[], isGroupChat: boolean, chatName
 };
 
 export const getChats = async (): Promise <GetChatsResponse> => {
-  const response = await axiosInstance.get<GetChatsResponse>("/chats");
+  const response = await axiosInstance.get<GetChatsResponse>("/chats/list");
   if (!response.data.success) {
     throw new Error(response.data.message || 'Failed to fetch chats');
   }

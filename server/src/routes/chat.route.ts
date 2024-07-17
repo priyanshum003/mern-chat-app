@@ -7,7 +7,7 @@ import { body } from 'express-validator';
 const router = express.Router();
 
 router.post(
-  '/',
+  '/create',
   protect,
   [
     body('users').isArray({ min: 1 }).withMessage('Users are required'),
@@ -17,6 +17,6 @@ router.post(
   createChat
 );
 
-router.get('/', protect, getChats);
+router.get('/list', protect, getChats);
 
 export default router;
