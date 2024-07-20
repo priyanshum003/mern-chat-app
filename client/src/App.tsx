@@ -11,9 +11,9 @@ const RegisterPage = lazy(() => import('./pages/RegisterPage'));
 
 const App: React.FC = () => {
 
-  const { user } = useAuth();
- 
-  if(!user) {
+  const { isLoading } = useAuth();
+
+  if (isLoading) {
     return <Loader />;
   }
 

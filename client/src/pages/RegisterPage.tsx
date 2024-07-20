@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Typography } from 'antd';
+import { Form, Input, Button, Typography, message } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -10,8 +10,13 @@ const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (values: { name: string; email: string; password: string }) => {
-    await register(values.name, values.email, values.password);
-    navigate('/chat');
+    try {
+      await register(values.name, values.email, values.password);
+      message.success('Registered successfully!');
+      navigate('/chat');
+    } catch (error) {
+      message.error('Registration failed. Please try again.');
+    }
   };
 
   return (

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Form, Input, Button, Typography } from 'antd';
+import { Form, Input, Button, Typography, message } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -10,8 +10,13 @@ const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleSubmit = async (values: { email: string; password: string }) => {
-    await login(values.email, values.password);
-    navigate('/chat');
+    try {
+      await login(values.email, values.password);
+      message.success('Logged in successfully!');
+      navigate('/chat');
+    } catch (error) {
+      message.error('Invalid email or password');
+    }
   };
 
   return (

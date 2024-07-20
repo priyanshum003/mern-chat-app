@@ -7,6 +7,7 @@ const AuthRedirect: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('user from AuthRedirect :', user);
     if (!user) {
       navigate('/login');
     } else {
@@ -14,7 +15,9 @@ const AuthRedirect: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     }
   }, [user, navigate]);
 
-  return <>{children}</>;
+  return <>
+    {children}
+  </>;
 };
 
 export default AuthRedirect;
