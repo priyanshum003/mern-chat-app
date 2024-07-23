@@ -25,7 +25,7 @@ const GroupChatForm: React.FC<GroupChatFormProps> = ({ open, onClose }) => {
     try {
       const response = await searchUser(query);
       if (response.success) {
-        setSearchResults(response.data.user.filter((u) => u._id !== user._id));
+        setSearchResults(response.data.users.filter((u) => u._id !== user._id));
       }
     } catch (error) {
       console.error('Failed to fetch users:', error);

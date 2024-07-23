@@ -6,4 +6,5 @@ export interface IChat {
     chatName?: string;
     groupAdmin?: string;
     groupAvatar?: string;
+    latestMessage?: string;
 }

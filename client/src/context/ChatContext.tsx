@@ -3,6 +3,7 @@ import { Socket, io } from 'socket.io-client';
 import { createChat as createChatAPI, getChats as getChatsAPI } from '../api/chats.api';
 import { getMessages as getMessagesAPI, sendMessage as sendMessageAPI } from '../api/messages.api';
 import { Chat, Message } from '../types/chat';
+import { useAuth } from './AuthContext';
 
 interface ChatContextType {
   chats: Chat[];
@@ -13,6 +14,10 @@ interface ChatContextType {
   sendMessage: (content: string) => Promise<void>;
   fetchChats: () => Promise<void>;
   createChat: (params: { users: string[]; isGroupChat: boolean; chatName?: string; groupAdmin?: string }) => Promise<void>;
+  setTyping: (isTyping: boolean) => void;
+  onlineUsers: { [userId: string]: string };
+  typingUsers: { [chatId: string]: string[] };
+  unreadMessages: { [chatId: string]: number };
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
@@ -23,22 +28,88 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [chats, setChats] = useState<Chat[]>([]);
   const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [typingUsers, setTypingUsers] = useState<{ [chatId: string]: string[] }>({});
+  const [onlineUsers, setOnlineUsers] = useState<{ [userId: string]: string }>({});
+  const [unreadMessages, setUnreadMessages] = useState<{ [chatId: string]: number }>({});
+
+  const { user: currentUser } = useAuth();
+
+  const updateLatestMessageInChat = useCallback((message: Message) => {
+    setChats((prevChats) =>
+      prevChats
+        .map((chat) =>
+          chat._id === message.chatId
+            ? { ...chat, latestMessage: message }
+            : chat
+        )
+        .sort((a, b) => new Date(b.latestMessage?.createdAt || 0).getTime() - new Date(a.latestMessage?.createdAt || 0).getTime())
+    );
+  }, []);
+
+  const incrementUnreadMessages = useCallback((chatId: string) => {
+    setUnreadMessages((prevUnread) => ({
+      ...prevUnread,
+      [chatId]: (prevUnread[chatId] || 0) + 1,
+    }));
+  }, []);
+
+  const clearUnreadMessages = useCallback((chatId: string) => {
+    setUnreadMessages((prevUnread) => ({
+      ...prevUnread,
+      [chatId]: 0,
+    }));
+  }, []);
 
   useEffect(() => {
     socket = io('http://localhost:5000');
 
     socket.on('connect', () => {
       console.log('Connected to socket.io server');
+      if (currentUser) {
+        socket.emit('userConnected', currentUser?._id);
+      }
     });
 
     socket.on('disconnect', () => {
       console.log('Disconnected from socket.io server');
     });
 
+    socket.on('updateUserStatus', ({ userId, status }) => {
+      setOnlineUsers((prev) => ({
+        ...prev,
+        [userId]: status,
+      }));
+    });
+
+    socket.on('typingStatus', ({ chatId, typingUsers }) => {
+      setTypingUsers((prev) => ({
+        ...prev,
+        [chatId]: typingUsers.filter((id: string) => id !== currentUser?._id),
+      }));
+    });
+
+    socket.on('newMessageNotification', (message: Message) => {
+      if (!selectedChat || selectedChat._id !== message.chatId) {
+        incrementUnreadMessages(message.chatId);
+      }
+      updateLatestMessageInChat(message);
+    });
+
+    socket.on('latestMessage', (message: Message) => {
+      updateLatestMessageInChat(message);
+    });
+
+    socket.on('newChatNotification', (chat: Chat) => {
+      setChats((prevChats) => [...prevChats, chat]);
+      if (currentUser && chat.users.includes(currentUser._id)) {
+        incrementUnreadMessages(chat._id);
+      }
+    });
+
     return () => {
       socket.disconnect();
     };
-  }, []);
+  }, [currentUser, incrementUnreadMessages, updateLatestMessageInChat]);
 
   useEffect(() => {
     if (selectedChat) {
@@ -51,6 +122,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           }
           return prevMessages;
         });
+        updateLatestMessageInChat(message);
+        clearUnreadMessages(message.chatId);
       };
 
       socket.on('message', handleMessage);
@@ -60,12 +133,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         socket.off('message', handleMessage);
       };
     }
-  }, [selectedChat]);
+  }, [selectedChat, updateLatestMessageInChat, clearUnreadMessages]);
 
   const fetchChats = useCallback(async () => {
     const response = await getChatsAPI();
     if (response.success) {
-      setChats(response.data);
+      const sortedChats = response.data.sort((a, b) => {
+        const dateA = new Date(a.latestMessage?.createdAt || 0);
+        const dateB = new Date(b.latestMessage?.createdAt || 0);
+        return dateB.getTime() - dateA.getTime();
+      });
+      setChats(sortedChats);
     }
   }, []);
 
@@ -74,8 +152,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     const response = await getMessagesAPI(chat._id);
     if (response.success) {
       setMessages(response.data);
+      clearUnreadMessages(chat._id);
     }
-  }, []);
+  }, [clearUnreadMessages]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!selectedChat) return;
@@ -90,15 +169,37 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     const response = await createChatAPI(users, isGroupChat, chatName, groupAdmin);
     if (response.success) {
       setChats((prevChats) => [...prevChats, response.data]);
+      socket.emit('newChat', response.data);
     }
   }, []);
+
+  const setTyping = (isTyping: boolean) => {
+    if (selectedChat && socket) {
+      socket.emit('typing', selectedChat._id, currentUser?._id, isTyping);
+    }
+  };
 
   useEffect(() => {
     fetchChats();
   }, [fetchChats]);
 
   return (
-    <ChatContext.Provider value={{ chats, selectedChat, setSelectedChat, messages, selectChat, sendMessage, fetchChats, createChat }}>
+    <ChatContext.Provider
+      value={{
+        chats,
+        selectedChat,
+        setSelectedChat,
+        messages,
+        selectChat,
+        sendMessage,
+        fetchChats,
+        createChat,
+        setTyping,
+        onlineUsers,
+        typingUsers,
+        unreadMessages,
+      }}
+    >
       {children}
     </ChatContext.Provider>
   );

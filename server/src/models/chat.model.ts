@@ -27,6 +27,12 @@ const ChatSchema: Schema = new Schema({
     type: String,
     default: function (this: IChat) { return this.isGroupChat ? 'https://png.pngtree.com/png-vector/20191009/ourmid/pngtree-group-icon-png-image_1796653.jpg' : null; },
   },
+  latestMessage: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Message',
+  },
+}, {
+  timestamps: true,
 });
 
 export default mongoose.model<IChat & Document>('Chat', ChatSchema);

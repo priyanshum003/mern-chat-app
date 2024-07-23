@@ -17,6 +17,8 @@ export interface Chat {
   latestMessage?: Message;
   groupAdmin?: User;
   groupAvatar?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ChatApiResponse {

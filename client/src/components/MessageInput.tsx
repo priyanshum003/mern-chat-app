@@ -4,8 +4,9 @@ import { Grid } from '@giphy/react-components';
 import { Button, Input, Upload, UploadProps } from 'antd';
 import { RcFile, UploadChangeParam } from 'antd/lib/upload';
 import Picker from 'emoji-picker-react';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { uploadFileToServer } from '../api/fileUpload.api';
+import { useChat } from '../context/ChatContext';
 
 const giphyFetch = new GiphyFetch(import.meta.env.VITE_GIPHY_API_KEY);
 
@@ -13,6 +14,7 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
+  const { selectedChat, setTyping } = useChat();
 
   const handleSend = () => {
     if (message.trim()) {
@@ -20,7 +22,17 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
       setMessage('');
     }
   };
-  
+
+  const handleKeyDown = () => {
+    setTyping(true);
+  };
+
+  const handleKeyUp = () => {
+    setTimeout(() => {
+      setTyping(false);
+    }, 1000);
+  };
+
   const handleUpload: UploadProps['onChange'] = async (info: UploadChangeParam) => {
     const file = (info.file.originFileObj || info.file) as RcFile;
     if (!file) {
@@ -29,7 +41,7 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
     }
     const formData = new FormData();
     formData.append('file', file);
-  
+
     try {
       const { url } = await uploadFileToServer(formData);
       onSendMessage(`${url}`);
@@ -37,7 +49,6 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
       console.error('File upload failed:', error);
     }
   };
-  
 
   const addEmoji = (emojiObject: any, event: any) => {
     setMessage(message + emojiObject.emoji);
@@ -51,22 +62,14 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
 
   const fetchGifs = (offset: number) => giphyFetch.trending({ offset, limit: 10 });
 
-  // const handleUpload: UploadProps['onChange'] = async (info: UploadChangeParam) => {
-  //   const file = (info.file.originFileObj || info.file) as RcFile;
-  //   if (!file) {
-  //     console.error('No file found');
-  //     return;
-  //   }
-  //   const formData = new FormData();
-  //   formData.append('file', file);
+  useEffect(() => {
+    const handleBeforeUnload = () => setTyping(false);
+    window.addEventListener('beforeunload', handleBeforeUnload);
 
-  //   try {
-  //     const { url} = await uploadFileToServer(formData);
-  //     onSendMessage(`${url}`);
-  //   } catch (error) {
-  //     console.error('File upload failed:', error);
-  //   }
-  // };
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [setTyping]);
 
   return (
     <div className="relative flex items-center p-4 bg-white border-t border-gray-200">
@@ -96,6 +99,8 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
         onPressEnter={handleSend}
         placeholder="Type a message..."
         className="flex-1 mr-2"
+        onKeyDown={handleKeyDown}
+        onKeyUp={handleKeyUp}
       />
       <Button icon={<SmileOutlined />} onClick={() => setShowEmojiPicker(!showEmojiPicker)} className="mr-2" />
       <Button icon={<GifOutlined />} onClick={() => setShowGifPicker(!showGifPicker)} className="mr-2" />

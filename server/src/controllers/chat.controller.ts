@@ -42,9 +42,9 @@ export const createChat = asyncHandler(async (req: AuthRequest, res: Response) =
     apiResponse(res, 201, true, 'Chat created successfully', populatedChat);
 });
 
-
 export const getChats = asyncHandler(async (req: AuthRequest, res: Response) => {
     const chats = await Chat.find({ users: req.user._id })
+        .populate('latestMessage')
         .populate('users', '-password')
         .populate('groupAdmin', '-password');
     apiResponse(res, 200, true, 'Chats retrieved successfully', chats);

@@ -21,8 +21,13 @@ export const sendMessage = asyncHandler(async (req: AuthRequest, res: Response) 
   } as IMessage)
 
   const createdMessage = await message.save();
-  await Chat.findByIdAndUpdate(chatId, { $push: { messages: createdMessage._id } });
   await createdMessage.populate('sender', 'name email');
+
+
+  await Chat.findByIdAndUpdate(chatId, {
+    latestMessage: createdMessage._id,
+    $push: { messages: createdMessage._id }
+  });
 
   io.to(chatId).emit('message', createdMessage);
 

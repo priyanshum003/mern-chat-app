@@ -6,7 +6,12 @@ export default {
   ],
   darkMode : false,
   theme: {
-    extend: {},
+    extend: {
+      backgroundColor : {
+        'dark-bg' : '#001529',
+        'light-bg' : '#f3f4f6'
+      }
+    },
   },
   plugins: [],
 }
