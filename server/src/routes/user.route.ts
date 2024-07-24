@@ -10,11 +10,13 @@ import {
 } from '../controllers/user.controller';
 import { protect } from '../middlewares/auth.middleware';
 import { validateRequest } from '../middlewares/validateRequest.middleware';
+import upload from '../middlewares/multerConfig';
 
 const router = express.Router();
 
 router.post(
   '/register',
+  upload.single('avatar'),
   [
     body('name').notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
@@ -36,14 +38,7 @@ router.post(
 
 router.post('/refresh-token', refreshAccessToken);
 
-router.post(
-  '/logout',
-  [
-    body('userId').notEmpty().withMessage('User ID is required'),
-  ],
-  validateRequest,
-  logoutUser
-);
+router.post('/logout', protect, logoutUser);
 
 router.get('/me', protect, getMe);
 

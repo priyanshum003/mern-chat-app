@@ -1,11 +1,11 @@
 import { ReactNode, createContext, useContext, useEffect, useState } from 'react';
-import { getCurrentUser as getCurrentUserAPI, login as loginUserAPI, register as registerUserAPI } from '../api/auth.api';
-import {  AuthApiResponse, User } from '../types/auth';
+import { getCurrentUser as getCurrentUserAPI, login as loginUserAPI, register as registerUserAPI, logout as logoutUserApi } from '../api/auth.api';
+import { AuthApiResponse, User } from '../types/auth';
 
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<void>;
+  register: (name: string, email: string, password: string , avatar?: File) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
 }
@@ -37,15 +37,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setUser(user);
   };
 
-  const register = async (name: string, email: string, password: string) => {
-    const response: AuthApiResponse = await registerUserAPI(name, email, password);
+  const register = async (name: string, email: string, password: string, avatar?: File) => {
+    const response: AuthApiResponse = await registerUserAPI(name, email, password, avatar);
     const user = response.data.user;
     setUser(user);
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await logoutUserApi();
     setUser(null);
-    // Call your API to logout the user if necessary
   };
 
   return (

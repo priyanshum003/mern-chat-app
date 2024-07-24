@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/user.model';
-import { User as UserInterface } from '../types/user';
+import { IUserDocument } from '../types/user';
 
 interface DecodedToken {
   id: string;
@@ -10,7 +10,7 @@ interface DecodedToken {
 }
 
 export interface AuthRequest extends Request {
-  user?: UserInterface | null;
+  user?: IUserDocument | null;
 }
 
 const extractToken = (req: AuthRequest): string | null => {

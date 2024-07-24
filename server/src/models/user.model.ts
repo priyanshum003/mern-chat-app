@@ -4,7 +4,6 @@ import jwt from 'jsonwebtoken';
 import { IUserDocument } from '../types/user';
 
 
-
 const UserSchema: Schema<IUserDocument> = new Schema({
   name: {
     type: String,

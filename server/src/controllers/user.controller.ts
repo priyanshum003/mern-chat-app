@@ -1,26 +1,42 @@
 import { Request, Response } from 'express';
-import User from '../models/user.model';
-import { IUserDocument } from '../types/user';
+import fs from 'fs';
 import jwt from 'jsonwebtoken';
+import cloudinary from '../config/cloudinaryConfig';
+import { AuthRequest } from '../middlewares/auth.middleware';
+import User from '../models/user.model';
+import { IUserDocument, LoginRequest, RegisterUserRequest, UserResponse } from '../types/user';
 import { apiResponse } from '../utils/apiResponse';
 import { asyncHandler } from '../utils/asyncHandler';
-import { AuthRequest } from '../middlewares/auth.middleware';
 
 const cookieOptions = {
   httpOnly: true,
-  secure: true, // Set to true if using HTTPS
+  secure: true, 
   sameSite: 'strict' as const,
 };
 
-export const registerUser = asyncHandler(async (req: Request, res: Response) => {
-  const { name, email, password, avatar } = req.body;
+// Register a new user
+export const registerUser = asyncHandler(async (req: RegisterUserRequest, res: Response) => {
+  console.log(req.body, "Register User");
+  const { name, email, password } = req.body;
+
+  let avatar = '';
+  if (req.file && req.file.path) {
+    avatar = req.file.path;
+    const uploadResult = await cloudinary.uploader.upload(avatar);
+
+    fs.unlinkSync(avatar);
+    avatar = uploadResult.secure_url;
+  }
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
     return apiResponse(res, 400, false, 'User already exists');
   }
 
-  const newUser: IUserDocument = new User({ name, email, password, avatar });
+  const newUser: IUserDocument = new User({ name, email, password});
+  if (avatar && avatar.length > 0) {
+    newUser.avatar = avatar;
+  }
   await newUser.save();
 
   const accessToken = newUser.generateAccessToken();
@@ -29,22 +45,23 @@ export const registerUser = asyncHandler(async (req: Request, res: Response) => 
   newUser.refreshToken = refreshToken;
   await newUser.save();
 
-  const userResponse = {
+  const userResponse: UserResponse = {
     _id: newUser._id,
     name: newUser.name,
     email: newUser.email,
     avatar: newUser.avatar,
-  }
+  };
 
   res.cookie('accessToken', accessToken, cookieOptions);
   res.cookie('refreshToken', refreshToken, cookieOptions);
   return apiResponse(res, 201, true, 'User registered successfully', { user: userResponse });
 });
 
-export const loginUser = asyncHandler(async (req: Request, res: Response) => {
+// Login a user
+export const loginUser = asyncHandler(async (req: LoginRequest, res: Response) => {
   const { email, password } = req.body;
 
-  const user: IUserDocument | null = await User.findOne({ email });
+  const user = await User.findOne({ email });
   if (!user) {
     return apiResponse(res, 400, false, 'Invalid credentials');
   }
@@ -60,26 +77,25 @@ export const loginUser = asyncHandler(async (req: Request, res: Response) => {
   user.refreshToken = refreshToken;
   await user.save();
 
-  const userResponse = {
+  const userResponse: UserResponse = {
     _id: user._id,
     name: user.name,
     email: user.email,
     avatar: user.avatar,
-  }
+  };
 
   res.cookie('accessToken', accessToken, cookieOptions);
   res.cookie('refreshToken', refreshToken, cookieOptions);
-  return apiResponse(res, 200, true, 'User logged in successfully', { user: userResponse })
+  return apiResponse(res, 200, true, 'User logged in successfully', { user: userResponse });
 });
 
-export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
-  const { userId } = req.body;
-
-  const user: IUserDocument | null = await User.findById(userId);
-  if (!user) {
-    return apiResponse(res, 400, false, 'User not found');
+// Logout a user
+export const logoutUser = asyncHandler(async (req: AuthRequest, res: Response) => {
+  if (!req.user) {
+    return apiResponse(res, 401, false, 'Unauthorized');
   }
 
+  const user = req.user;
   user.refreshToken = '';
   await user.save();
 
@@ -88,6 +104,7 @@ export const logoutUser = asyncHandler(async (req: Request, res: Response) => {
   return apiResponse(res, 200, true, 'Logged out successfully');
 });
 
+// Refresh the access token
 export const refreshAccessToken = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
@@ -111,10 +128,10 @@ export const refreshAccessToken = asyncHandler(async (req: Request, res: Respons
   });
 });
 
-export const getMe = asyncHandler(async (req: Request, res: Response) => {
-  const userId = (req as any).user.id; // Assuming user ID is added to req by a middleware
-
-  const user: IUserDocument | null = await User.findById(userId).select('-password -refreshToken');
+// Get the current logged-in user
+export const getMe = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const userId = req.user._id;
+  const user = await User.findById(userId).select('-password -refreshToken');
   if (!user) {
     return apiResponse(res, 404, false, 'User not found');
   }
@@ -122,6 +139,7 @@ export const getMe = asyncHandler(async (req: Request, res: Response) => {
   return apiResponse(res, 200, true, 'User data retrieved successfully', { user });
 });
 
+// Search for users by name or email
 export const searchUsers = asyncHandler(async (req: AuthRequest, res: Response) => {
   const { query } = req.query;
 
