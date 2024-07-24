@@ -1,3 +1,4 @@
+import { CloseOutlined } from '@ant-design/icons';
 import { Avatar, Modal } from 'antd';
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
@@ -47,7 +48,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ chat, visible, onClose })
             footer={null}
             centered
             className="w-full max-w-md p-0 overflow-hidden rounded-lg shadow-lg"
-            bodyStyle={{ padding: 0 }}
+            closeIcon={<CloseOutlined style={{ color: 'white', fontSize: '16px' , backgroundColor: 'rgba(0, 0, 0, 0.5)', padding: '8px', borderRadius: '50%' }} />}
         >
             <div className="flex flex-col text-center">
                 <div className="bg-blue-600 p-6 text-white rounded-t-lg flex flex-col items-center">
@@ -59,7 +60,7 @@ const ChatInfoModal: React.FC<ChatInfoModalProps> = ({ chat, visible, onClose })
                     <div className="text-gray-600 text-sm mb-4">
                         {chat.isGroupChat ? 'Group created on' : 'Chat started on'}: {createdAt}
                     </div>
-                    {chat.isGroupChat && (
+                     {chat.isGroupChat && (
                         <div className="w-full">
                             <strong className="text-gray-900">Participants:</strong>
                             <ul className="list-disc list-inside ml-4 mt-2">
