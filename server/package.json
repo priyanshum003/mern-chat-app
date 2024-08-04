@@ -13,7 +13,8 @@
     "socket.io": "^4.7.5"
   },
   "scripts": {
-    "dev": "nodemon"
+    "dev": "nodemon",
+    "start": "ts-node-dev --transpile-only --ignore-watch node_modules src/server.ts"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
