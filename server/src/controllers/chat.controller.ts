@@ -38,14 +38,14 @@ export const createChat = asyncHandler(async (req: AuthRequest, res: Response) =
 
     const createdChat = await chat.save();
 
-    const populatedChat = await createdChat.populate('users', '-password');
+    const populatedChat = await createdChat.populate('users', '-password -refreshToken');
     apiResponse(res, 201, true, 'Chat created successfully', populatedChat);
 });
 
 export const getChats = asyncHandler(async (req: AuthRequest, res: Response) => {
     const chats = await Chat.find({ users: req.user._id })
         .populate('latestMessage')
-        .populate('users', '-password')
-        .populate('groupAdmin', '-password');
+        .populate('users', '-password -refreshToken')
+        .populate('groupAdmin', '-password -refreshToken');
     apiResponse(res, 200, true, 'Chats retrieved successfully', chats);
 });
