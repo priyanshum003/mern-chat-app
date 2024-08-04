@@ -14,7 +14,7 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
   const [message, setMessage] = useState('');
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const { selectedChat, setTyping } = useChat();
+  const {  setTyping } = useChat();
 
   const handleSend = () => {
     if (message.trim()) {
@@ -50,7 +50,7 @@ const MessageInput: React.FC<{ onSendMessage: (content: string) => void }> = ({ 
     }
   };
 
-  const addEmoji = (emojiObject: any, event: any) => {
+  const addEmoji = (emojiObject: any) => {
     setMessage(message + emojiObject.emoji);
   };
 

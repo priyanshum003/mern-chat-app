@@ -26,7 +26,7 @@ const MessageGroup: React.FC<MessageGroupProps> = ({ date, messages, currentUser
             if (extension) {
                 return (
                     <div className="flex items-center">
-                        <FileIcon extension={extension} {...defaultStyles[extension]} />
+                        <FileIcon extension={extension} {...defaultStyles[extension as keyof typeof defaultStyles]} />
                         <a href={content} target="_blank" rel="noopener noreferrer" className="ml-2">
                             {url.pathname.split('/').pop()}
                         </a>

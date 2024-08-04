@@ -52,7 +52,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isDrawerVisible, toggleDrawer }) => {
         selectChat(newChat);
         setSearchQuery('');
         if (isDrawerVisible) {
-          toggleDrawer(); 
+          toggleDrawer();
         }
       } else {
         message.error('Failed to create chat');
@@ -60,7 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isDrawerVisible, toggleDrawer }) => {
     } catch (error) {
       message.error('Error creating chat');
     }
-  }, [fetchChats, selectChat, toggleDrawer]);
+  }, [fetchChats, selectChat, toggleDrawer, isDrawerVisible]);
 
   const showModal = () => {
     setIsModalVisible(true);
@@ -77,7 +77,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isDrawerVisible, toggleDrawer }) => {
   const handleChatSelect = (chat: Chat) => {
     selectChat(chat);
     if (isDrawerVisible) {
-      toggleDrawer(); 
+      toggleDrawer();
     }
   };
 
@@ -123,12 +123,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isDrawerVisible, toggleDrawer }) => {
                   <List.Item.Meta
                     avatar={
                       <div className="relative">
-                        <Avatar src={chatAvatar} className="w-12 h-12" />
+                        <Badge count={unreadCount} offset={[-10, 10]} size="small">
+                          <Avatar src={chatAvatar} className="w-12 h-12" />
+                        </Badge>
                         {!chat.isGroupChat && isOnline && (
                           <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                        )}
-                        {unreadCount > 0 && (
-                          <Badge count={unreadCount} className="absolute -top-1 -right-1" />
                         )}
                       </div>
                     }

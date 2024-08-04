@@ -1,5 +1,5 @@
-import { BellOutlined, LogoutOutlined, MenuOutlined, UserOutlined } from '@ant-design/icons';
-import { Avatar, Badge, Button, Dropdown, Menu, message } from 'antd';
+import { LogoutOutlined, MenuOutlined, UserOutlined } from '@ant-design/icons';
+import { Avatar, Button, Dropdown, Menu, message } from 'antd';
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import ProfileModal from './ProfileModal';
@@ -47,9 +47,7 @@ const Header: React.FC<HeaderProps> = ({ toggleDrawer }) => {
                     <h1 className="text-xl font-semibold text-white">Chat Buddies</h1>
                 </div>
                 <div className="header-right flex items-center">
-                    <Badge count={1} className="mr-4">
-                        <Button type="text" icon={<BellOutlined style={{ fontSize: '20px' }} />} className="text-white hover:text-gray-400" />
-                    </Badge>
+                 
                     <Dropdown overlay={menu} trigger={['click']}>
                         <div className="flex items-center cursor-pointer">
                             <Avatar src={currentUser?.avatar} className="cursor-pointer" />
