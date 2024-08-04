@@ -8,16 +8,15 @@ const AuthRedirect: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   const location = useLocation();
 
   useEffect(() => {
-    console.log('user from AuthRedirect :', user);
-
     // Do not redirect if the current path is '/register' or '/login'
     if (location.pathname === '/register' || location.pathname === '/login') {
       return;
     }
 
-    if (!user) {
+    // Redirect to '/login' if the user is not logged in
+    if (!user && location.pathname !== '/login') {
       navigate('/login');
-    } else {
+    } else if (user && location.pathname !== '/chat') {
       navigate('/chat');
     }
   }, [user, navigate, location]);
