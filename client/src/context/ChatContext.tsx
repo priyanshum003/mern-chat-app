@@ -5,6 +5,8 @@ import { getMessages as getMessagesAPI, sendMessage as sendMessageAPI } from '..
 import { Chat, Message } from '../types/chat';
 import { useAuth } from './AuthContext';
 
+const socketURL = import.meta.env.VITE_SOCKET_URL as string;
+
 interface ChatContextType {
   chats: Chat[];
   selectedChat: Chat | null;
@@ -35,6 +37,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const { user: currentUser } = useAuth();
 
   const updateLatestMessageInChat = useCallback((message: Message) => {
+    console.log('Updating latest message in chat:', message); // Debugging
     setChats((prevChats) =>
       prevChats
         .map((chat) =>
@@ -46,12 +49,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     );
   }, []);
 
+  useEffect(() => {
+    console.log("Unread messages updated:", unreadMessages);
+  }, [unreadMessages]);
+  
   const incrementUnreadMessages = useCallback((chatId: string) => {
-    setUnreadMessages((prevUnread) => ({
-      ...prevUnread,
-      [chatId]: (prevUnread[chatId] || 0) + 1,
-    }));
+    setUnreadMessages((prevUnread) => {
+      console.log("Incrementing unread messages for chatId:", chatId); // Debugging
+      console.log("Previous unread messages state:", prevUnread); // Debugging
+      return {
+        ...prevUnread,
+        [chatId]: (prevUnread[chatId] || 0) + 1,
+      };
+    });
   }, []);
+  
 
   const clearUnreadMessages = useCallback((chatId: string) => {
     setUnreadMessages((prevUnread) => ({
@@ -61,55 +73,65 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   useEffect(() => {
-    socket = io('http://localhost:5000');
-
+    socket = io(socketURL);
+  
     socket.on('connect', () => {
       console.log('Connected to socket.io server');
       if (currentUser) {
         socket.emit('userConnected', currentUser?._id);
       }
     });
-
+  
     socket.on('disconnect', () => {
       console.log('Disconnected from socket.io server');
     });
-
+  
     socket.on('updateUserStatus', ({ userId, status }) => {
       setOnlineUsers((prev) => ({
         ...prev,
         [userId]: status,
       }));
     });
-
+  
     socket.on('typingStatus', ({ chatId, typingUsers }) => {
       setTypingUsers((prev) => ({
         ...prev,
         [chatId]: typingUsers.filter((id: string) => id !== currentUser?._id),
       }));
     });
-
+  
     socket.on('newMessageNotification', (message: Message) => {
+      console.log('New message received:', message);
       if (!selectedChat || selectedChat._id !== message.chatId) {
         incrementUnreadMessages(message.chatId);
       }
       updateLatestMessageInChat(message);
     });
-
+  
     socket.on('latestMessage', (message: Message) => {
       updateLatestMessageInChat(message);
     });
-
+  
     socket.on('newChatNotification', (chat: Chat) => {
+      console.log('New chat created:', chat);
       setChats((prevChats) => [...prevChats, chat]);
-      if (currentUser && chat.users.includes(currentUser._id)) {
+    
+      if (currentUser && chat.users.some(user => user._id === currentUser._id)) {
         incrementUnreadMessages(chat._id);
       }
     });
-
+  
+    socket.on('unreadCountUpdate', ({ chatId, count }) => {
+      setUnreadMessages(prev => ({
+        ...prev,
+        [chatId]: count
+      }));
+    });
+  
     return () => {
       socket.disconnect();
     };
-  }, [currentUser, incrementUnreadMessages, updateLatestMessageInChat]);
+  }, [currentUser, incrementUnreadMessages, updateLatestMessageInChat]);  
 
   useEffect(() => {
     if (selectedChat) {
@@ -137,6 +159,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchChats = useCallback(async () => {
     const response = await getChatsAPI();
+    console.log('fetchChats response:', response); 
     if (response.success) {
       const sortedChats = response.data.sort((a, b) => {
         const dateA = new Date(a.latestMessage?.createdAt || 0);
@@ -147,14 +170,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+  const markMessagesAsRead = useCallback((chatId: string) => {
+    if (currentUser) {
+      socket.emit('markMessagesRead', { userId: currentUser._id, chatId });
+    }
+  }, [currentUser]);
+
   const selectChat = useCallback(async (chat: Chat) => {
     setSelectedChat(chat);
     const response = await getMessagesAPI(chat._id);
     if (response.success) {
       setMessages(response.data);
       clearUnreadMessages(chat._id);
+      markMessagesAsRead(chat._id);
     }
-  }, [clearUnreadMessages]);
+  }, [clearUnreadMessages, markMessagesAsRead]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!selectedChat) return;
@@ -168,6 +198,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     const { users, isGroupChat, chatName, groupAdmin } = params;
     const response = await createChatAPI(users, isGroupChat, chatName, groupAdmin);
     if (response.success) {
+      console.log('New chat created:', response.data);
       setChats((prevChats) => [...prevChats, response.data]);
       socket.emit('newChat', response.data);
     }
